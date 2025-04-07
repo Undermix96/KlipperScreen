@@ -43,7 +43,7 @@ install_graphical_backend()
       read -r -e -p "Backend Xserver or Wayland (cage)? [X/w]" BACKEND
       if [[ "$BACKEND" =~ ^[wW]$ ]]; then
         echo_text "Installing Wayland Cage Kiosk"
-        if sudo apt install -y $CAGE; then
+        if  apt install -y $CAGE; then
             echo_ok "Installed Cage"
             BACKEND="W"
             break
@@ -53,7 +53,7 @@ install_graphical_backend()
         fi
       else
         echo_text "Installing Xserver"
-        if sudo apt install -y $XSERVER; then
+        if  apt install -y $XSERVER; then
             echo_ok "Installed X"
             update_x11
             BACKEND="X"
@@ -70,12 +70,12 @@ install_graphical_backend()
 install_packages()
 {
     echo_text "Update package data"
-    sudo apt update
+     apt update
 
     echo_text "Checking for broken packages..."
     if dpkg-query -W -f='${db:Status-Abbrev} ${binary:Package}\n' | grep -E "^.[^nci]"; then
         echo_text "Detected broken packages. Attempting to fix"
-        sudo apt -f install
+         apt -f install
         if dpkg-query -W -f='${db:Status-Abbrev} ${binary:Package}\n' | grep -E "^.[^nci]"; then
             echo_error "Unable to fix broken packages. These must be fixed before KlipperScreen can be installed"
             exit 1
@@ -85,16 +85,16 @@ install_packages()
     fi
 
     echo_text "Installing KlipperScreen dependencies"
-    sudo apt install -y $OPTIONAL
+     apt install -y $OPTIONAL
     echo "$_"
 
-    if sudo apt install -y $PYGOBJECT; then
+    if  apt install -y $PYGOBJECT; then
         echo_ok "Installed PyGobject dependencies"
     else
         echo_error "Installation of PyGobject dependencies failed ($PYGOBJECT)"
         exit 1
     fi
-    if sudo apt install -y $MISC; then
+    if  apt install -y $MISC; then
         echo_ok "Installed Misc packages"
     else
         echo_error "Installation of Misc packages failed ($MISC)"
@@ -142,7 +142,7 @@ create_virtualenv()
     if [ $? -gt 0 ]; then
         echo_error "Error: pip install exited with status code $?"
         echo_text "Trying again with new tools..."
-        sudo apt install -y build-essential cmake libsystemd-dev
+         apt install -y build-essential cmake libsystemd-dev
         if [[ "$(uname -m)" =~ armv[67]l ]]; then
             echo_text "Adding piwheels.org as extra index..."
             pip install --extra-index-url https://www.piwheels.org/simple --upgrade pip setuptools
@@ -171,12 +171,12 @@ install_systemd_service()
     SERVICE=${SERVICE//KS_DIR/$KSPATH}
     SERVICE=${SERVICE//KS_BACKEND/$BACKEND}
 
-    echo "$SERVICE" | sudo tee /etc/systemd/system/KlipperScreen.service > /dev/null
-    sudo systemctl unmask KlipperScreen.service
-    sudo systemctl daemon-reload
-    sudo systemctl enable KlipperScreen
-    sudo systemctl set-default multi-user.target
-    sudo adduser "$USER" tty
+    echo "$SERVICE" |  tee /etc/systemd/system/KlipperScreen.service > /dev/null
+     systemctl unmask KlipperScreen.service
+     systemctl daemon-reload
+     systemctl enable KlipperScreen
+     systemctl set-default multi-user.target
+     adduser "$USER" tty
 }
 
 create_policy()
@@ -185,10 +185,10 @@ create_policy()
     POLKIT_USR_DIR="/usr/share/polkit-1/rules.d"
 
     echo_text "Installing KlipperScreen PolicyKit Rules"
-    sudo groupadd -f klipperscreen
-    sudo groupadd -f network
-    sudo adduser "$USER" netdev
-    sudo adduser "$USER" network
+     groupadd -f klipperscreen
+     groupadd -f network
+     adduser "$USER" netdev
+     adduser "$USER" network
     if [ ! -x "$(command -v pkaction)" ]; then
         echo "PolicyKit not installed"
         return
@@ -212,10 +212,10 @@ create_policy()
         exit 1
     fi
     echo_text "Installing PolicyKit Rules to ${RULE_FILE}..."
-    sudo rm ${RULE_FILE}
+     rm ${RULE_FILE}
 
     KS_GID=$( getent group klipperscreen | awk -F: '{printf "%d", $3}' )
-    sudo tee ${RULE_FILE} > /dev/null << EOF
+     tee ${RULE_FILE} > /dev/null << EOF
 polkit.addRule(function(action, subject) {
     if (action.id.indexOf("org.freedesktop.NetworkManager.") == 0 && subject.isInGroup("network")) {
         return polkit.Result.YES;
@@ -240,7 +240,7 @@ EOF
 create_policy_legacy()
 {
     RULE_FILE="/etc/polkit-1/localauthority/50-local.d/20-klipperscreen.pkla"
-    sudo tee ${RULE_FILE} > /dev/null << EOF
+     tee ${RULE_FILE} > /dev/null << EOF
 [KlipperScreen]
 Identity=unix-user:$USER
 Action=org.freedesktop.login1.power-off;
@@ -256,7 +256,7 @@ EOF
 
 update_x11()
 {
-    sudo tee /etc/X11/Xwrapper.config > /dev/null << EOF
+     tee /etc/X11/Xwrapper.config > /dev/null << EOF
 allowed_users=anybody
 needs_root_rights=yes
 EOF
@@ -270,7 +270,7 @@ fix_fbturbo()
             echo_text "FBturbo not installed, but the configuration file exists"
             echo_text "This will fail if the config is not removed or the package installed"
             echo_text "moving the config to the home folder"
-            sudo mv $FBCONFIG ~/99-fbturbo-backup.conf
+             mv $FBCONFIG ~/99-fbturbo-backup.conf
         fi
     fi
 }
@@ -279,13 +279,13 @@ add_desktop_file()
 {
     mkdir -p "$HOME"/.local/share/applications/
     cp "$SCRIPTPATH"/KlipperScreen.desktop "$HOME"/.local/share/applications/KlipperScreen.desktop
-    sudo cp "$SCRIPTPATH"/../styles/icon.svg /usr/share/icons/hicolor/scalable/apps/KlipperScreen.svg
+     cp "$SCRIPTPATH"/../styles/icon.svg /usr/share/icons/hicolor/scalable/apps/KlipperScreen.svg
 }
 
 start_KlipperScreen()
 {
     echo_text "Starting service..."
-    sudo systemctl restart KlipperScreen
+     systemctl restart KlipperScreen
 }
 
 install_network_manager()
@@ -300,16 +300,16 @@ install_network_manager()
             echo_text ""
             echo_text "If you were not using NetworkManager"
             echo_text "You will need to reconnect to the network using KlipperScreen or nmtui or nmcli"
-            sudo apt install network-manager
-            sudo mkdir -p /etc/NetworkManager/conf.d
-            sudo tee /etc/NetworkManager/conf.d/any-user.conf > /dev/null << EOF
+             apt install network-manager
+             mkdir -p /etc/NetworkManager/conf.d
+             tee /etc/NetworkManager/conf.d/any-user.conf > /dev/null << EOF
 [main]
 auth-polkit=false
 EOF
-            sudo systemctl -q disable dhcpcd 2> /dev/null
-            sudo systemctl -q stop dhcpcd 2> /dev/null
-            sudo systemctl enable NetworkManager
-            sudo systemctl -q --no-block start NetworkManager
+             systemctl -q disable dhcpcd 2> /dev/null
+             systemctl -q stop dhcpcd 2> /dev/null
+             systemctl enable NetworkManager
+             systemctl -q --no-block start NetworkManager
             sync
             systemctl reboot
         fi

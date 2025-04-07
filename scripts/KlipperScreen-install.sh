@@ -317,10 +317,7 @@ EOF
 }
 
 # Script start
-if [ "$EUID" == 0 ]
-    then echo_error "Please do not run this script as root"
-    exit 1
-fi
+
 check_requirements
 
 if [ -z "$SERVICE" ]; then
